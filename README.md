@@ -161,18 +161,6 @@ src/
 - **1-VC-per-Lock Constraint**: Prevents credential duplication and management issues
 - **Hash-Based Verification**: SHA-256 hashing ensures data integrity
 
-### Production Considerations
-
-This is a **proof of concept** for educational purposes. Production deployment requires:
-
-- **Secure Key Storage**: Hardware Security Modules (HSMs) or secure enclaves
-- **Blockchain Integration**: Real smart contract deployment on Ethereum/Hyperledger
-- **Certificate Authority**: Proper PKI infrastructure for key validation
-- **Secure Communication**: TLS/SSL for all network communications
-- **Audit Logging**: Comprehensive logging for security monitoring
-- **Formal Verification**: Mathematical proof of security properties
-- **Penetration Testing**: Professional security assessment
-
 ## Development Scripts
 
 - `npm run build` - Compile TypeScript to JavaScript
@@ -189,43 +177,6 @@ This is a **proof of concept** for educational purposes. Production deployment r
 - **Hashing**: SHA-256 for data integrity
 - **Encoding**: Base64 for cross-platform compatibility
 - **Key Generation**: Node.js crypto module with 2048-bit modulus
-
-### Performance Characteristics
-
-- **Key Generation**: ~100-200ms per RSA-2048 key pair
-- **Signature Creation**: ~1-5ms per signature
-- **Signature Verification**: ~1-2ms per verification
-- **Memory Usage**: Minimal footprint with singleton smart contract
-
-## Future Enhancements
-
-### Immediate Roadmap
-
-- **Mobile SDK**: React Native/Flutter integration
-- **Web Dashboard**: Management interface for device owners
-- **Time-Based Access**: Temporary credentials with expiration
-- **Location-Based Access**: GPS/geofencing integration
-
-### Long-Term Vision
-
-- **Blockchain Deployment**: Ethereum smart contract implementation
-- **Hardware Integration**: IoT device SDK for real locks
-- **Multi-Signature Support**: Shared ownership scenarios
-- **Advanced ZKP**: zk-SNARKs for enhanced privacy
-- **Formal Verification**: Mathematical security proofs
-- **Regulatory Compliance**: GDPR, SOC 2, ISO 27001 alignment
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-MIT License - see LICENSE file for details.
 
 ## Research Context
 
