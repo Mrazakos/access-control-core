@@ -8,6 +8,12 @@ export interface VerifiableCredential {
   signature: string;
 }
 
+export interface UserMetaData {
+  email: string;
+  name?: string;
+  timeStamp: Date;
+}
+
 /**
  * Represents a cryptographic key pair
  */

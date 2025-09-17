@@ -1,4 +1,3 @@
-import { Lock } from "./lock";
 import { Address } from "./types";
 
 /**
@@ -8,14 +7,22 @@ import { Address } from "./types";
 export class SmartContract {
   private static instance: SmartContract;
 
-  // Mapping from lockId to Lock object
-  private locks: Map<number, Lock>;
+  // Mapping from lockId to public key
+  private lockPublicKeys: Map<number, string>;
+
+  // Mapping from lockId to owner address
+  private lockOwners: Map<number, Address>;
+
+  // Mapping from lockId to Revoked signature (if revoked)
+  private revoked: Map<number, Set<string>>;
 
   // Counter for generating unique lock IDs
   private lockCounter: number;
 
   private constructor() {
-    this.locks = new Map();
+    this.lockPublicKeys = new Map();
+    this.lockOwners = new Map();
+    this.revoked = new Map();
     this.lockCounter = 1;
   }
 
@@ -31,14 +38,13 @@ export class SmartContract {
 
   /**
    * Registers a new lock in the smart contract
-   * Returns the generated lockId, the actual Lock object is managed by DeviceOwner
+   * Returns the generated lockId
    */
   registerLock(pubK: string, owner: Address): number {
     const lockId = this.lockCounter++;
 
-    const lock = new Lock(lockId, owner, pubK);
-
-    this.locks.set(lockId, lock);
+    this.lockPublicKeys.set(lockId, pubK);
+    this.lockOwners.set(lockId, owner);
 
     console.log(`Smart Contract: Registered lock ${lockId} for owner ${owner}`);
     return lockId;
@@ -48,34 +54,42 @@ export class SmartContract {
    * Revokes a lock by its ID
    * Only the owner of the lock can revoke it
    */
-  revokeLock(lockId: number, owner: Address): void {
-    const lock = this.locks.get(lockId);
-
-    if (!lock) {
+  revokeSignature(lockId: number, signature: string, owner: Address): void {
+    if (!this.lockOwners.has(lockId)) {
       throw new Error(`Lock with ID ${lockId} not found in smart contract`);
     }
 
-    if (!lock.isOwnedBy(owner)) {
+    if (this.lockOwners.get(lockId) !== owner) {
       throw new Error(`Address ${owner} is not the owner of lock ${lockId}`);
     }
 
-    lock.deactivate();
-    console.log(`Smart Contract: Revoked lock ${lockId}`);
+    // Get existing set or create new one if it doesn't exist
+    if (!this.revoked.has(lockId)) {
+      this.revoked.set(lockId, new Set());
+    }
+
+    this.revoked.get(lockId)!.add(signature);
+    console.log(
+      `Smart Contract: Revoked lock ${lockId} with signature ${signature}`
+    );
   }
 
-  /**
-   * Gets a lock by its ID
-   */
-  getLockById(lockId: number): Lock | undefined {
-    return this.locks.get(lockId);
+  fetchRevokedSignatures(lockId: number): Set<string> | undefined {
+    return this.revoked.get(lockId);
   }
 
   /**
    * Checks if an address owns a specific lock
    */
   isOwner(owner: Address, lockId: number): boolean {
-    const lock = this.locks.get(lockId);
-    return lock ? lock.isOwnedBy(owner) : false;
+    return this.lockOwners.get(lockId) === owner;
+  }
+
+  /**
+   * Gets the owner of a specific lock
+   */
+  getOwner(lockId: number): Address | undefined {
+    return this.lockOwners.get(lockId);
   }
 
   /**
@@ -86,49 +100,28 @@ export class SmartContract {
     currentOwner: Address,
     newOwner: Address
   ): void {
-    const lock = this.locks.get(lockId);
-
-    if (!lock) {
+    if (!this.lockOwners.has(lockId)) {
       throw new Error(`Lock with ID ${lockId} not found`);
     }
 
-    if (!lock.isOwnedBy(currentOwner)) {
+    if (this.lockOwners.get(lockId) !== currentOwner) {
       throw new Error(
         `Address ${currentOwner} is not the owner of lock ${lockId}`
       );
     }
-    lock.owner = newOwner;
+
+    this.lockOwners.set(lockId, newOwner);
 
     console.log(
       `Smart Contract: Transferred ownership of lock ${lockId} from ${currentOwner} to ${newOwner}`
     );
   }
 
-  activateLock(lockId: number, owner: Address): void {
-    const lock = this.locks.get(lockId);
-    if (!lock) {
-      throw new Error(`Lock with ID ${lockId} not found`);
-    }
-    if (!lock.isOwnedBy(owner)) {
-      throw new Error(`Address ${owner} is not the owner of lock ${lockId}`);
-    }
-    lock.activate();
-    console.log(`Smart Contract: Activated lock ${lockId}`);
-  }
-
   /**
    * Gets the total number of locks in the system
    */
   getTotalLocks(): number {
-    return this.locks.size;
-  }
-
-  /**
-   * Checks if a lock is active (not revoked)
-   */
-  isLockActive(lockId: number): boolean {
-    const lock = this.locks.get(lockId);
-    return lock ? lock.isActive : false;
+    return this.lockOwners.size;
   }
 
   /**
@@ -136,18 +129,11 @@ export class SmartContract {
    * Returns null if the lock doesn't exist or is inactive
    */
   fetchPublicKey(lockId: number): string | null {
-    const lock = this.locks.get(lockId);
-
-    if (!lock) {
+    if (!this.lockPublicKeys.has(lockId)) {
       console.log(`Smart Contract: Lock with ID ${lockId} not found`);
       return null;
     }
 
-    if (!lock.isActive) {
-      console.log(`Smart Contract: Lock with ID ${lockId} is inactive/revoked`);
-      return null;
-    }
-
-    return lock.publicKey;
+    return this.lockPublicKeys.get(lockId) || null;
   }
 }

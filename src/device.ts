@@ -1,17 +1,27 @@
-import { VerifiableCredential } from "./types";
+import { Address, KeyPair, VerifiableCredential } from "./types";
 import { CryptoUtils } from "./crypto-utils";
 import { SmartContract } from "./smart-contract";
 
 /**
- * Represents a device in the access control system
+ * Represents a smart device in the access control system
  */
 export class Device {
   public lockId: number;
   public pubK: string; // public key
 
+  private revokedSignatures: Set<string>; // Track revoked signatures locally
+
   constructor(lockId: number, pubK: string) {
     this.lockId = lockId;
     this.pubK = pubK;
+    this.revokedSignatures = new Set<string>();
+  }
+
+  /**
+   * Gets the public key for verification
+   */
+  getPublicKey(): string {
+    return this.pubK;
   }
 
   /**
@@ -36,6 +46,19 @@ export class Device {
     return true;
   }
 
+  fetchRevokedSignatures(): void {
+    const smartContract = SmartContract.getInstance();
+    const revokedSigs = smartContract.fetchRevokedSignatures(this.lockId);
+    if (!revokedSigs) {
+      console.log(
+        `No revoked signatures found for lockId ${this.lockId} or lock not found`
+      );
+      return;
+    }
+
+    revokedSigs.forEach((sig) => this.revokedSignatures.add(sig));
+  }
+
   /**
    * Unlocks the device
    */
@@ -56,24 +79,15 @@ export class Device {
    * Checks that the VC is for this lock, that the lock is still active, and that the signature is valid
    */
   verifyVc(vc: VerifiableCredential): boolean {
-    // Check if VC exists and is for this lock
-    if (!vc || !vc.lockId || vc.lockId !== this.lockId) {
-      console.log(`VC validation failed: Invalid VC or lockId mismatch`);
+    if (!vc) {
+      console.log(`VC validation failed: No VC provided`);
       return false;
     }
 
-    // Check if the lock is still active using the smart contract
-    const smartContract = SmartContract.getInstance();
-    if (!smartContract.isLockActive(this.lockId)) {
+    if (this.revokedSignatures.has(vc.signature)) {
       console.log(
-        `VC validation failed: Lock ${this.lockId} is inactive/revoked`
+        `VC validation failed: Signature has been revoked for lock ${this.lockId}`
       );
-      return false;
-    }
-
-    // Refresh public key to ensure we have the latest valid key
-    if (!this.fetchPubK()) {
-      console.log(`VC validation failed: Could not fetch valid public key`);
       return false;
     }
 
@@ -104,5 +118,24 @@ export class Device {
       0,
       8
     )}...)`;
+  }
+}
+
+export class MyDevice extends Device {
+  public privateKey: string;
+  public nickname?: string;
+
+  constructor(lockId: number, keyPair: KeyPair, nickname?: string) {
+    super(lockId, keyPair.publicKey);
+    this.privateKey = keyPair.privateKey;
+    this.nickname = nickname;
+  }
+
+  /**
+   * Returns a string representation of the device with additional info
+   */
+  toString(): string {
+    const nicknameStr = this.nickname ? `, nickname: ${this.nickname}` : "";
+    return `MyDevice(lockId: ${this.lockId}${nicknameStr})`;
   }
 }

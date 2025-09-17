@@ -1,5 +1,4 @@
 import { VerifiableCredential } from "./types";
-import { Lock } from "./lock";
 import { CryptoUtils } from "./crypto-utils";
 
 /**
