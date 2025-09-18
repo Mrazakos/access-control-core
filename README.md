@@ -1,10 +1,10 @@
 # Access Control Core
 
-A TypeScript proof of concept for a decentralized Access Control System with Zero-Knowledge Proof verification. This implementation demonstrates the core concepts of a blockchain-based access control system with verifiable credentials, smart locks, and secure device management.
+A TypeScript proof of concept for a decentralized Access Control System with Zero-Knowledge Proof verification. This implementation demonstrates the core concepts of a blockchain-based access control system with verifiable credentials (VC), smart locks, and secure device management.
 
 ## Architecture
 
-The system implements a zero-knowledge proof (ZKP) architecture where devices verify user credentials without ever seeing the original user data, ensuring maximum privacy and security.
+The system implements a zero-knowledge proof (ZKP) architecture where devices verify VC without ever seeing the original user data, ensuring maximum privacy and security.
 
 ### Core Flow
 
@@ -16,20 +16,20 @@ The system implements a zero-knowledge proof (ZKP) architecture where devices ve
 
 ### Core Classes
 
-- **User**: Manages verifiable credentials with 1-VC-per-lock constraint
-- **Device**: Smart lock devices that verify credentials using ZKP principles
+- **User**: Manages VCs with 1-VC-per-lock constraint
+- **Device**: Smart lock devices that verify VCs using ZKP principles
 - **Lock**: Physical/digital locks with RSA key pairs and ownership tracking
-- **DeviceOwner**: Issues verifiable credentials and manages lock lifecycle
+- **DeviceOwner**: Issues VCs and manages VC lifecycle
 - **SmartContract**: Singleton managing global lock state and ownership validation
 - **CryptoUtils**: RSA-2048 cryptographic operations with object signing support
 
 ### Key Features
 
-- **Zero-Knowledge Proof Verification**: Devices verify credentials without accessing original user data
-- **1-VC-per-Lock Constraint**: Each user can only have one active credential per lock
-- **Owner-Only Revocation**: Only lock owners can revoke their locks
+- **Zero-Knowledge Proof Verification**: Devices verify VCs without accessing original user data
+- **1-VC-per-Lock Constraint**: Each user can only have one active VC per lock
+- **Owner-Only Revocation**: Only device owners can revoke VCs (signatures). Locks themselves cannot be revoked.
 - **Hash-Based Signatures**: VCs contain signed hashes of user metadata for privacy
-- **Active Lock Validation**: Automatic checking of lock status during verification
+- **Active Lock Validation**: Automatic checking of VC status during verification
 - **RSA-2048 Encryption**: Production-ready cryptographic implementation
 
 ## Installation
@@ -63,9 +63,9 @@ npm start
 The demo showcases:
 - Device owner registering a new lock via smart contract
 - Physical device configuration with lock credentials
-- Issuing verifiable credentials with hash-based signatures
+- Issuing VCs with hash-based signatures
 - Zero-knowledge proof verification (device never sees original user data)
-- Lock revocation and security validation
+- VC revocation and security validation 
 
 ### Running Tests
 
@@ -75,10 +75,10 @@ npm test
 
 The comprehensive test suite covers:
 - Lock registration and management with proper ownership
-- Zero-knowledge proof credential verification
+- Zero-knowledge proof VC verification
 - 1-VC-per-lock constraint enforcement
-- Owner-only revocation security
-- Active lock validation during verification
+- Owner-only VC revocation security
+- Active VC validation during verification
 - RSA cryptographic operations
 
 ## Example Usage
@@ -92,23 +92,23 @@ const deviceOwner = new DeviceOwner();
 // Register a new lock through smart contract (gets unique lockId)
 const lock = deviceOwner.registerNewLock("Front Door Lock");
 
-// Issue a verifiable credential with zero-knowledge proof
+// Issue a verifiable credential (VC) with zero-knowledge proof
 const user = new User();
 const vc = deviceOwner.issueVc(lock.lockId, 'user@example.com', 'Front Door Access');
 
-// User stores the credential (enforces 1-VC-per-lock)
+// User stores the VC (enforces 1-VC-per-lock)
 user.storeVc(vc);
 
 // Device verifies using ZKP - only sees the hash, not original data
 const device = new Device(lock.lockId, lock.publicKey);
-const isValidCredential = device.verifyVc(vc);
+const isValidVC = device.verifyVc(vc);
 
-console.log('ZKP Verification Result:', isValidCredential);
+console.log('ZKP Verification Result:', isValidVC);
 
-// Owner can revoke access (only owner can revoke)
-deviceOwner.revokeLock(lock.lockId);
+// Owner can revoke VC (only owner can revoke VCs)
+deviceOwner.revokeVc(vc);
 
-// Verification now fails for revoked lock
+// Verification now fails for revoked VC
 const isStillValid = device.verifyVc(vc);
 console.log('After revocation:', isStillValid); // false
 ```
@@ -118,15 +118,15 @@ console.log('After revocation:', isStillValid); // false
 The system implements ZKP principles where:
 
 1. **User metadata is hashed** before being signed
-2. **Devices only receive the hash** in the VerifiableCredential
+2. **Devices only receive the hash** in the VC
 3. **Original user data never leaves the issuer** (DeviceOwner)
 4. **Verification uses only the hash** and signature validation
 5. **Privacy is maintained** while ensuring security
 
-### VerifiableCredential Structure
+### VC Structure
 
 ```typescript
-interface VerifiableCredential {
+interface VC {
   lockId: number;
   userMetaDataHash: string;  // SHA-256 hash of user data (ZKP)
   lockNickname: string;
@@ -138,16 +138,16 @@ interface VerifiableCredential {
 
 ```
 src/
-├── types.ts                 # Type definitions (VerifiableCredential, KeyPair, etc.)
+├── types.ts                 # Type definitions (VC, KeyPair, etc.)
 ├── crypto-utils.ts          # RSA-2048 cryptographic operations with object signing
 ├── lock.ts                  # Lock class with key pair generation and ownership
-├── device.ts               # Device class with ZKP verification and active lock checking
+├── device.ts               # Device class with ZKP verification and active VC checking
 ├── user.ts                 # User class with 1-VC-per-lock constraint enforcement
-├── device-owner.ts         # DeviceOwner class with lock management and VC issuance
+├── device-owner.ts         # DeviceOwner class with Device management and VC issuance
 ├── smart-contract.ts       # SmartContract singleton with ownership validation
 ├── index.ts               # Demo showcasing complete ZKP flow
 └── __tests__/
-    └── access-control.test.ts  # Comprehensive test suite with ZKP scenarios
+  └── access-control.test.ts  # Comprehensive test suite with ZKP scenarios
 ```
 
 ## Security Features
@@ -156,9 +156,9 @@ src/
 
 - **Zero-Knowledge Proof Architecture**: Devices verify without accessing original data
 - **RSA-2048 Encryption**: Production-grade cryptographic signatures with PKCS1_PSS_PADDING
-- **Owner-Only Operations**: Only lock owners can revoke their locks
-- **Active Lock Validation**: Automatic checking prevents use of revoked credentials
-- **1-VC-per-Lock Constraint**: Prevents credential duplication and management issues
+- **Owner-Only Operations**: Only device owners can revoke VCs
+- **Active VC Validation**: Automatic checking prevents use of revoked VCs
+- **1-VC-per-Lock Constraint**: Prevents VC duplication and management issues
 - **Hash-Based Verification**: SHA-256 hashing ensures data integrity
 
 ## Development Scripts
