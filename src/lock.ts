@@ -3,9 +3,9 @@ import { CryptoUtils } from "./crypto-utils";
 import { SmartContract } from "./smart-contract";
 
 /**
- * Represents a smart device in the access control system
+ * Represents a smart lock controller in the access control system
  */
-export class Device {
+export class Lock {
   public lockId: number;
   public pubK: string; // public key
 
@@ -25,7 +25,7 @@ export class Device {
   }
 
   /**
-   * Fetches the public key of the device from the smart contract
+   * Fetches the public key of the lock from the smart contract
    * Handles inactive locks by returning false if lock is revoked
    */
   fetchPubK(): boolean {
@@ -41,7 +41,7 @@ export class Device {
 
     this.pubK = fetchedPubK;
     console.log(
-      `Successfully fetched public key for device with lockId: ${this.lockId}`
+      `Successfully fetched public key for lock with lockId: ${this.lockId}`
     );
     return true;
   }
@@ -60,22 +60,22 @@ export class Device {
   }
 
   /**
-   * Unlocks the device
+   * Unlocks the lock
    */
   unlock(): void {
-    console.log(`Device with lockId ${this.lockId} has been unlocked`);
+    console.log(`Lock with lockId ${this.lockId} has been unlocked`);
   }
 
   /**
-   * Sets the lock ID for the device
+   * Sets the lock ID for the lock
    */
   setLockId(lockId: number): void {
     this.lockId = lockId;
-    console.log(`Device lock ID set to: ${lockId}`);
+    console.log(`Lock ID set to: ${lockId}`);
   }
 
   /**
-   * Verifies a verifiable credential against this device
+   * Verifies a verifiable credential against this lock
    * Checks that the VC is for this lock, that the lock is still active, and that the signature is valid
    */
   verifyVc(vc: VerifiableCredential): boolean {
@@ -96,7 +96,7 @@ export class Device {
     const isValidSignature = CryptoUtils.verify(
       vc.userMetaDataHash, // This is the hashed user metadata
       vc.signature,
-      this.pubK // This device's public key (should match the lock's public key)
+      this.pubK // This lock's public key (should match the lock's public key)
     );
 
     if (isValidSignature) {
@@ -111,17 +111,17 @@ export class Device {
   }
 
   /**
-   * Returns a string representation of the device
+   * Returns a string representation of the lock
    */
   toString(): string {
-    return `Device(lockId: ${this.lockId}, pubK: ${this.pubK.substring(
+    return `Lock(lockId: ${this.lockId}, pubK: ${this.pubK.substring(
       0,
       8
     )}...)`;
   }
 }
 
-export class MyDevice extends Device {
+export class MyLock extends Lock {
   public privateKey: string;
   public nickname?: string;
 
@@ -132,10 +132,10 @@ export class MyDevice extends Device {
   }
 
   /**
-   * Returns a string representation of the device with additional info
+   * Returns a string representation of the lock with additional info
    */
   toString(): string {
     const nicknameStr = this.nickname ? `, nickname: ${this.nickname}` : "";
-    return `MyDevice(lockId: ${this.lockId}${nicknameStr})`;
+    return `MyLock(lockId: ${this.lockId}${nicknameStr})`;
   }
 }

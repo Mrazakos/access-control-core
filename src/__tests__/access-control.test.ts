@@ -1,32 +1,32 @@
 import { User } from "../user";
-import { DeviceOwner } from "../device-owner";
-import { Device } from "../device";
+import { LockOwner } from "../lock-owner";
+import { Lock } from "../lock";
 import { SmartContract } from "../smart-contract";
 import { CryptoUtils } from "../crypto-utils";
 import { VerifiableCredential, UserMetaData } from "../types";
 
 describe("Access Control System", () => {
-  let deviceOwner: DeviceOwner;
+  let lockOwner: LockOwner;
   let user: User;
   let smartContract: SmartContract;
 
   beforeEach(() => {
-    deviceOwner = new DeviceOwner();
+    lockOwner = new LockOwner();
     user = new User();
     smartContract = SmartContract.getInstance();
   });
 
-  describe("DeviceOwner", () => {
-    it("should register a new device", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+  describe("LockOwner", () => {
+    it("should register a new lock", () => {
+      const lock = lockOwner.registerNewLock("Test Lock");
 
-      expect(device).toBeDefined();
-      expect(device.lockId).toBeGreaterThan(0);
-      expect(deviceOwner.getMyDevices()).toContain(device);
+      expect(lock).toBeDefined();
+      expect(lock.lockId).toBeGreaterThan(0);
+      expect(lockOwner.getMyLocks()).toContain(lock);
     });
 
     it("should issue a verifiable credential", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+      const lock = lockOwner.registerNewLock("Test Lock");
 
       const userMetadata: UserMetaData = {
         email: "test@example.com",
@@ -34,98 +34,82 @@ describe("Access Control System", () => {
         timeStamp: new Date(),
       };
 
-      const vc = deviceOwner.issueVc(
-        device.lockId,
-        userMetadata,
-        "Test Device"
-      );
+      const vc = lockOwner.issueVc(lock.lockId, userMetadata, "Test Lock");
 
       expect(vc).toBeDefined();
-      expect(vc.lockId).toBe(device.lockId);
-      expect(vc.lockNickname).toBe("Test Device");
+      expect(vc.lockId).toBe(lock.lockId);
+      expect(vc.lockNickname).toBe("Test Lock");
       expect(vc.userMetaDataHash).toBeDefined();
       expect(vc.signature).toBeDefined();
-      expect(deviceOwner.getIssuedVcs()).toContain(vc);
+      expect(lockOwner.getIssuedVcs()).toContain(vc);
     });
 
     it("should revoke access with VC", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+      const lock = lockOwner.registerNewLock("Test lock");
 
       const userMetadata: UserMetaData = {
         email: "test@example.com",
         timeStamp: new Date(),
       };
 
-      const vc = deviceOwner.issueVc(
-        device.lockId,
-        userMetadata,
-        "Test Device"
-      );
+      const vc = lockOwner.issueVc(lock.lockId, userMetadata, "Test lock");
 
       // Initially the VC should be in the issued VCs list
-      expect(deviceOwner.getIssuedVcs()).toContain(vc);
+      expect(lockOwner.getIssuedVcs()).toContain(vc);
 
       // Revoke access using the VC signature
-      deviceOwner.revokeAccessWithVc(device.lockId, vc.signature);
+      lockOwner.revokeAccessWithVc(lock.lockId, vc.signature);
 
       // After revocation, the VC should be removed from issued VCs list
-      expect(deviceOwner.getIssuedVcs()).not.toContain(vc);
+      expect(lockOwner.getIssuedVcs()).not.toContain(vc);
     });
 
-    it("should throw error when issuing VC for non-existent device", () => {
+    it("should throw error when issuing VC for non-existent lock", () => {
       const userMetadata: UserMetaData = {
         email: "test@example.com",
         timeStamp: new Date(),
       };
 
       expect(() => {
-        deviceOwner.issueVc(999999, userMetadata, "Non-existent Device");
-      }).toThrow("Device with ID 999999 not found");
+        lockOwner.issueVc(999999, userMetadata, "Non-existent lock");
+      }).toThrow("lock with ID 999999 not found");
     });
 
     it("should throw error when revoking with non-existent signature", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+      const lock = lockOwner.registerNewLock("Test lock");
 
       expect(() => {
-        deviceOwner.revokeAccessWithVc(device.lockId, "non-existent-signature");
+        lockOwner.revokeAccessWithVc(lock.lockId, "non-existent-signature");
       }).toThrow("VC with signature non-existent-signature not found");
     });
   });
 
   describe("User", () => {
     it("should store a verifiable credential", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+      const lock = lockOwner.registerNewLock("Test lock");
 
       const userMetadata: UserMetaData = {
         email: "test@example.com",
         timeStamp: new Date(),
       };
 
-      const vc = deviceOwner.issueVc(
-        device.lockId,
-        userMetadata,
-        "Test Device"
-      );
+      const vc = lockOwner.issueVc(lock.lockId, userMetadata, "Test lock");
 
       user.storeVc(vc);
 
       expect(user.vcs).toContain(vc);
-      expect(user.getCredentialForLock(device.lockId)).toBe(vc);
+      expect(user.getCredentialForLock(lock.lockId)).toBe(vc);
     });
 
-    it("should replace existing credential for the same device", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+    it("should replace existing credential for the same lock", () => {
+      const lock = lockOwner.registerNewLock("Test lock");
 
       const userMetadata1: UserMetaData = {
         email: "test@example.com",
         timeStamp: new Date(),
       };
 
-      const vc1 = deviceOwner.issueVc(
-        device.lockId,
-        userMetadata1,
-        "Test Device 1"
-      );
+      const vc1 = lockOwner.issueVc(lock.lockId, userMetadata1, "Test lock 1");
       user.storeVc(vc1);
 
       const userMetadata2: UserMetaData = {
@@ -133,48 +117,40 @@ describe("Access Control System", () => {
         timeStamp: new Date(),
       };
 
-      const vc2 = deviceOwner.issueVc(
-        device.lockId,
-        userMetadata2,
-        "Test Device 2"
-      );
+      const vc2 = lockOwner.issueVc(lock.lockId, userMetadata2, "Test lock 2");
       user.storeVc(vc2);
 
-      expect(user.getCredentialForLock(device.lockId)).toBe(vc2);
+      expect(user.getCredentialForLock(lock.lockId)).toBe(vc2);
       expect(user.vcs).toHaveLength(1);
     });
 
-    it("should return undefined for non-existent device credential", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+    it("should return undefined for non-existent lock credential", () => {
+      const lock = lockOwner.registerNewLock("Test lock");
 
-      expect(user.getCredentialForLock(device.lockId)).toBeUndefined();
+      expect(user.getCredentialForLock(lock.lockId)).toBeUndefined();
     });
   });
 
-  describe("Device", () => {
+  describe("lock", () => {
     it("should verify valid VC", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+      const lock = lockOwner.registerNewLock("Test lock");
 
       const userMetadata: UserMetaData = {
         email: "test@example.com",
         timeStamp: new Date(),
       };
 
-      const vc = deviceOwner.issueVc(
-        device.lockId,
-        userMetadata,
-        "Test Device"
-      );
-      const testDevice = new Device(device.lockId, device.pubK);
+      const vc = lockOwner.issueVc(lock.lockId, userMetadata, "Test lock");
+      const testlock = new Lock(lock.lockId, lock.pubK);
 
-      const isValid = testDevice.verifyVc(vc);
+      const isValid = testlock.verifyVc(vc);
 
       expect(isValid).toBe(true);
     });
 
     it("should reject invalid VC", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
-      const testDevice = new Device(device.lockId, device.pubK);
+      const lock = lockOwner.registerNewLock("Test lock");
+      const testlock = new Lock(lock.lockId, lock.pubK);
 
       const invalidVc: VerifiableCredential = {
         lockId: 999999, // Different lock ID
@@ -183,41 +159,37 @@ describe("Access Control System", () => {
         signature: "invalid",
       };
 
-      const isValid = testDevice.verifyVc(invalidVc);
+      const isValid = testlock.verifyVc(invalidVc);
 
       expect(isValid).toBe(false);
     });
 
     it("should reject VC with revoked signature", () => {
-      const device = deviceOwner.registerNewDevice("Test Device");
+      const lock = lockOwner.registerNewLock("Test lock");
 
       const userMetadata: UserMetaData = {
         email: "test@example.com",
         timeStamp: new Date(),
       };
 
-      const vc = deviceOwner.issueVc(
-        device.lockId,
-        userMetadata,
-        "Test Device"
-      );
+      const vc = lockOwner.issueVc(lock.lockId, userMetadata, "Test lock");
 
       // Initially, the VC should be valid
-      const testDevice = new Device(device.lockId, device.pubK);
-      expect(testDevice.verifyVc(vc)).toBe(true);
+      const testlock = new Lock(lock.lockId, lock.pubK);
+      expect(testlock.verifyVc(vc)).toBe(true);
 
       // Revoke the VC
-      deviceOwner.revokeAccessWithVc(device.lockId, vc.signature);
+      lockOwner.revokeAccessWithVc(lock.lockId, vc.signature);
 
-      testDevice.fetchRevokedSignatures();
+      testlock.fetchRevokedSignatures();
 
       // After revocation, the VC should be invalid
-      expect(testDevice.verifyVc(vc)).toBe(false);
+      expect(testlock.verifyVc(vc)).toBe(false);
     });
   });
 
   describe("SmartContract", () => {
-    it("should register a device", () => {
+    it("should register a lock", () => {
       const keyPair = CryptoUtils.generateKeyPair();
       const owner = CryptoUtils.generateAddress();
 
@@ -254,7 +226,7 @@ describe("Access Control System", () => {
         smartContract.revokeSignature(lockId, "revocation_signature", notOwner);
       }).toThrow(`Address ${notOwner} is not the owner of lock ${lockId}`);
 
-      // Device should still be accessible
+      // lock should still be accessible
       expect(smartContract.fetchPublicKey(lockId)).toBe(keyPair.publicKey);
 
       // Owner should be able to revoke

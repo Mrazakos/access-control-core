@@ -1,61 +1,61 @@
-import { Device, MyDevice } from "./device";
+import { Lock, MyLock } from "./lock";
 import { VerifiableCredential, KeyPair, Address, UserMetaData } from "./types";
 import { CryptoUtils } from "./crypto-utils";
 import { SmartContract } from "./smart-contract";
 
 /**
- * Represents a device owner in the access control system
+ * Represents a lock owner in the access control system
  */
-export class DeviceOwner {
-  public myDevices: MyDevice[];
+export class LockOwner {
+  public myLocks: MyLock[];
   public listOfIssuedVcs: VerifiableCredential[];
   public address: Address;
 
   constructor() {
-    this.myDevices = [];
+    this.myLocks = [];
     this.listOfIssuedVcs = [];
     this.address = CryptoUtils.generateAddress();
   }
 
   /**
-   * Registers a new device by generating a key pair and getting lockId from smart contract
+   * Registers a new smart lock by generating a key pair and getting lockId from smart contract
    */
-  registerNewDevice(nickname: string): Device {
+  registerNewLock(nickname: string): Lock {
     const keyPair = CryptoUtils.generateKeyPair();
     const smartContract = SmartContract.getInstance();
 
     const lockId = smartContract.registerLock(keyPair.publicKey, this.address);
 
-    const newDevice = new MyDevice(lockId, keyPair, nickname);
-    this.myDevices.push(newDevice);
+    const newLock = new MyLock(lockId, keyPair, nickname);
+    this.myLocks.push(newLock);
 
-    console.log(`Registered new device with ID: ${lockId}`);
-    console.log(`myDevices: ${this.myDevices.length}`);
-    return newDevice;
+    console.log(`Registered new smart lock with ID: ${lockId}`);
+    console.log(`myLocks: ${this.myLocks.length}`);
+    return newLock;
   }
 
   /**
-   * Issues a verifiable credential for a specific device
-   * Signs the userMetadataHash with the device's private key
+   * Issues a verifiable credential for a specific smart lock
+   * Signs the userMetadataHash with the lock's private key
    */
   issueVc(
     lockId: number,
     userMetadata: UserMetaData,
     lockNickname: string
   ): VerifiableCredential {
-    // Find the device
-    const device = this.myDevices.find((d) => d.lockId === lockId);
+    // Find the smart lock
+    const lock = this.myLocks.find((l) => l.lockId === lockId);
 
-    if (!device) {
-      throw new Error(`Device with ID ${lockId} not found`);
+    if (!lock) {
+      throw new Error(`Smart lock with ID ${lockId} not found`);
     }
 
     const userMetaDataString = JSON.stringify(userMetadata);
 
-    // Sign the userMetadata with the device's private key
+    // Sign the userMetadata with the lock's private key
     const { signature, userMetaDataHash } = CryptoUtils.sign(
       userMetaDataString,
-      device.privateKey
+      lock.privateKey
     );
 
     // Create the verifiable credential
@@ -80,14 +80,14 @@ export class DeviceOwner {
   }
 
   /**
-   * Revokes access to a specific device
+   * Revokes access to a specific smart lock
    * Also revokes it in the smart contract
    */
   revokeAccessWithVc(lockId: number, signature: string): void {
-    const device = this.myDevices.find((d) => d.lockId === lockId);
+    const lock = this.myLocks.find((l) => l.lockId === lockId);
 
-    if (!device) {
-      throw new Error(`Device with ID ${lockId} not found`);
+    if (!lock) {
+      throw new Error(`Smart lock with ID ${lockId} not found`);
     }
 
     const vc = this.listOfIssuedVcs.find((v) => v.signature === signature);
@@ -102,34 +102,34 @@ export class DeviceOwner {
     const smartContract = SmartContract.getInstance();
     smartContract.revokeSignature(lockId, signature, this.address);
 
-    console.log(`Revoked access to device ${lockId} with signature ${signature}`);
+    console.log(`Revoked access to lock ${lockId} with signature ${signature}`);
   }
 
   /**
-   * Gets all devices owned by this device owner
+   * Gets all locks owned by this lock owner
    */
-  getMyDevices(): Device[] {
-    return [...this.myDevices];
+  getMyLocks(): Lock[] {
+    return [...this.myLocks];
   }
 
   /**
-   * Gets all verifiable credentials issued by this device owner
+   * Gets all verifiable credentials issued by this lock owner
    */
   getIssuedVcs(): VerifiableCredential[] {
     return [...this.listOfIssuedVcs];
   }
 
   /**
-   * Finds a device by its ID
+   * Finds a lock by its ID
    */
-  findDevice(lockId: number): Device | undefined {
-    return this.myDevices.find((d) => d.lockId === lockId);
+  findLock(lockId: number): Lock | undefined {
+    return this.myLocks.find((l) => l.lockId === lockId);
   }
 
   /**
-   * Returns a string representation of the device owner
+   * Returns a string representation of the lock owner
    */
   toString(): string {
-    return `DeviceOwner(Devices: ${this.myDevices.length}, Issued VCs: ${this.listOfIssuedVcs.length})`;
+    return `LockOwner(Locks: ${this.myLocks.length}, Issued VCs: ${this.listOfIssuedVcs.length})`;
   }
 }
