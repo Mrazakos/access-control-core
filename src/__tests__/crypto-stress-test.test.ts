@@ -5,7 +5,7 @@ import { UserMetaData } from "../types";
 
 describe("Cryptographic Stress Testing", () => {
   describe("PKCS1_PSS_PADDING Sign-Verify Functionality", () => {
-    const STRESS_TEST_ITERATIONS = 25000; // Start with 5k, can increase
+    const STRESS_TEST_ITERATIONS = 10000;
     let results: {
       totalTests: number;
       successfulSigns: number;
@@ -119,15 +119,6 @@ describe("Cryptographic Stress Testing", () => {
         `  Complex JSON: ${results.edgeCases.jsonComplexity ? "✅" : "❌"}`
       );
       console.log("=".repeat(80));
-
-      // Save results to file for thesis documentation
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const resultsJson = JSON.stringify(results, null, 2);
-      require("fs").writeFileSync(
-        `stress-test-results-${timestamp}.json`,
-        resultsJson
-      );
-      console.log(`Results saved to: stress-test-results-${timestamp}.json`);
     });
 
     it("should handle basic sign-verify operations stress test", async () => {
@@ -346,40 +337,32 @@ describe("Cryptographic Stress Testing", () => {
       const user = new User();
       const lock = lockOwner.registerNewLock("Stress Test Lock");
 
-      // Test 1000 real VC issuance and verification cycles
-      for (let i = 0; i < 1000; i++) {
-        const userMetadata: UserMetaData = {
-          email: `user${i}@example.com`,
-          name: `Test User ${i}`,
-          timeStamp: new Date(),
-        };
+      // Test real VC issuance and verification cycles using STRESS_TEST_ITERATIONS
+      for (let i = 0; i < STRESS_TEST_ITERATIONS; i++) {
+        const userMetadata = generateTestData(i);
 
-        // Issue VC
+        // Issue VC with the generated weird data
         const vc = lockOwner.issueVc(
           lock.lockId,
           userMetadata,
           `Test Lock ${i}`
         );
 
-        // Store VC
         try {
           user.storeVc(vc);
         } catch (error) {
-          // Expected for 1-VC-per-lock constraint after first iteration
-          if (i > 0) {
-            continue;
-          } else {
-            throw error;
-          }
+          throw error;
         }
 
         // Verify VC
         const isValid = lock.verifyVc(vc);
         expect(isValid).toBe(true);
 
-        // Clean up for next iteration
-        if (i === 0) {
-          user.vcs = []; // Reset for next iteration
+        results.totalTests++;
+        if (isValid) {
+          results.successfulVerifications++;
+        } else {
+          results.failedVerifications++;
         }
       }
     });

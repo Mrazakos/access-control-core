@@ -48,3 +48,6 @@ test-results/
 *.tmp
 *.temp
 .cache/
+
+# Test results
+stress-test-results-*
