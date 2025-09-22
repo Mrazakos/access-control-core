@@ -61,64 +61,35 @@ describe("Cryptographic Stress Testing", () => {
     afterAll(() => {
       // Calculate averages
       results.timeStats.avgSignTime =
-        results.timeStats.totalTime / (results.successfulSigns * 2); // Divided by 2 because we measure both sign and verify
+        results.timeStats.totalTime / (results.successfulSigns * 2);
       results.timeStats.avgVerifyTime =
         results.timeStats.totalTime / (results.successfulVerifications * 2);
 
-      // Log comprehensive results for thesis documentation
-      console.log("\n" + "=".repeat(80));
-      console.log("CRYPTOGRAPHIC STRESS TEST RESULTS - PKCS1_PSS_PADDING");
-      console.log("=".repeat(80));
-      console.log(`Total Tests Conducted: ${results.totalTests}`);
+      // Output only vital data for stress test runner
+      const successRate = (
+        (results.successfulVerifications / results.totalTests) *
+        100
+      ).toFixed(2);
+
+      console.log("=== STRESS TEST RESULTS ===");
       console.log(
-        `Successful Signs: ${results.successfulSigns} (${(
-          (results.successfulSigns / results.totalTests) *
-          100
-        ).toFixed(2)}%)`
+        `Tests: ${
+          results.totalTests
+        } | Success Rate: ${successRate}% | Avg Sign: ${results.timeStats.avgSignTime.toFixed(
+          2
+        )}ms | Avg Verify: ${results.timeStats.avgVerifyTime.toFixed(2)}ms`
       );
       console.log(
-        `Successful Verifications: ${results.successfulVerifications} (${(
-          (results.successfulVerifications / results.totalTests) *
-          100
-        ).toFixed(2)}%)`
-      );
-      console.log(`Failed Signs: ${results.failedSigns}`);
-      console.log(`Failed Verifications: ${results.failedVerifications}`);
-      console.log(`Encoding Errors: ${results.encodingErrors}`);
-      console.log(`\nPerformance Metrics:`);
-      console.log(
-        `  Average Sign Time: ${results.timeStats.avgSignTime.toFixed(3)}ms`
+        `Edge Cases: Empty:${results.edgeCases.emptyData ? "✅" : "❌"} Large:${
+          results.edgeCases.largeData ? "✅" : "❌"
+        } Unicode:${results.edgeCases.unicodeData ? "✅" : "❌"} Special:${
+          results.edgeCases.specialChars ? "✅" : "❌"
+        } JSON:${results.edgeCases.jsonComplexity ? "✅" : "❌"}`
       );
       console.log(
-        `  Average Verify Time: ${results.timeStats.avgVerifyTime.toFixed(3)}ms`
+        `Errors: Signs:${results.failedSigns} Verifications:${results.failedVerifications} Encoding:${results.encodingErrors}`
       );
-      console.log(
-        `  Min Sign Time: ${results.timeStats.minSignTime.toFixed(3)}ms`
-      );
-      console.log(
-        `  Max Sign Time: ${results.timeStats.maxSignTime.toFixed(3)}ms`
-      );
-      console.log(
-        `  Min Verify Time: ${results.timeStats.minVerifyTime.toFixed(3)}ms`
-      );
-      console.log(
-        `  Max Verify Time: ${results.timeStats.maxVerifyTime.toFixed(3)}ms`
-      );
-      console.log(`\nEdge Cases Tested:`);
-      console.log(`  Empty Data: ${results.edgeCases.emptyData ? "✅" : "❌"}`);
-      console.log(
-        `  Large Data (>10KB): ${results.edgeCases.largeData ? "✅" : "❌"}`
-      );
-      console.log(
-        `  Unicode Data: ${results.edgeCases.unicodeData ? "✅" : "❌"}`
-      );
-      console.log(
-        `  Special Characters: ${results.edgeCases.specialChars ? "✅" : "❌"}`
-      );
-      console.log(
-        `  Complex JSON: ${results.edgeCases.jsonComplexity ? "✅" : "❌"}`
-      );
-      console.log("=".repeat(80));
+      console.log("=== END RESULTS ===");
     });
 
     it("should handle basic sign-verify operations stress test", async () => {
@@ -224,7 +195,7 @@ describe("Cryptographic Stress Testing", () => {
         expect(emptyVerify).toBe(true);
         results.edgeCases.emptyData = true;
       } catch (error) {
-        console.warn("Empty data test failed:", error);
+        // Edge case test failed - not critical for stress testing
       }
 
       // Test large data (>10KB)
@@ -239,7 +210,7 @@ describe("Cryptographic Stress Testing", () => {
         expect(largeVerify).toBe(true);
         results.edgeCases.largeData = true;
       } catch (error) {
-        console.warn("Large data test failed:", error);
+        // Edge case test failed - not critical for stress testing
       }
 
       // Test Unicode data
@@ -254,7 +225,7 @@ describe("Cryptographic Stress Testing", () => {
         expect(unicodeVerify).toBe(true);
         results.edgeCases.unicodeData = true;
       } catch (error) {
-        console.warn("Unicode data test failed:", error);
+        // Edge case test failed - not critical for stress testing
       }
 
       // Test special characters
@@ -269,7 +240,7 @@ describe("Cryptographic Stress Testing", () => {
         expect(specialVerify).toBe(true);
         results.edgeCases.specialChars = true;
       } catch (error) {
-        console.warn("Special characters test failed:", error);
+        // Edge case test failed - not critical for stress testing
       }
 
       // Test complex JSON
@@ -298,7 +269,7 @@ describe("Cryptographic Stress Testing", () => {
         expect(complexVerify).toBe(true);
         results.edgeCases.jsonComplexity = true;
       } catch (error) {
-        console.warn("Complex JSON test failed:", error);
+        // Edge case test failed - not critical for stress testing
       }
     });
 

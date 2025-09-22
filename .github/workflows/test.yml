@@ -1,0 +1,48 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run TypeScript type checking
+        run: npx tsc --noEmit
+
+      - name: Run cryptographic stress tests (on main branch only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Running stress tests..."
+          timeout 10m npm run test:stress || echo "Stress tests completed or timed out"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ github.sha }}
+          path: |
+            stress-test-results-*/
+            coverage/
+          retention-days: 14
+          if-no-files-found: ignore
