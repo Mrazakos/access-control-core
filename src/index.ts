@@ -91,6 +91,7 @@ export function runDemo(): void {
     console.log("Lock owner revokes the VC...");
     lockOwner.revokeAccessWithVc(lock.lockId, vc.signature);
     lockForVerification.fetchPubK();
+    lockForVerification.fetchRevokedSignatures();
 
     // Try to access after revocation
     const accessAfterRevoke = lockForVerification.verifyVc(credential!);
