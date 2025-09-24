@@ -51,3 +51,4 @@ test-results/
 
 # Test results
 stress-test-results-*
+adversarial-test-results-*

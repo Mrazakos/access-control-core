@@ -44,13 +44,24 @@ export class CryptoUtils {
   }
 
   /**
-   * Verifies a digital signature
+   * Verifies a digital signature with strict base64 validation
    */
   static verify(
     dataHash: string,
     signature: string,
     publicKey: string
   ): boolean {
+    // SECURITY FIX: Strict base64 validation to prevent tampering
+    if (!CryptoUtils.isValidBase64(signature)) {
+      console.warn("Invalid base64 signature detected:", signature);
+      return false;
+    }
+
+    if (!CryptoUtils.isValidBase64(dataHash)) {
+      console.warn("Invalid base64 dataHash detected:", dataHash);
+      return false;
+    }
+
     return crypto.verify(
       "sha256",
       Buffer.from(dataHash, "base64"),
@@ -60,6 +71,27 @@ export class CryptoUtils {
       },
       Buffer.from(signature, "base64")
     );
+  }
+
+  /**
+   * Strict base64 validation to prevent signature tampering
+   */
+  private static isValidBase64(str: string): boolean {
+    // Must only contain valid base64 characters: A-Z, a-z, 0-9, +, /, =
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+
+    if (!base64Regex.test(str)) {
+      return false;
+    }
+
+    // Check if the decoded buffer matches the original when re-encoded
+    try {
+      const decoded = Buffer.from(str, "base64");
+      const reencoded = decoded.toString("base64");
+      return reencoded === str;
+    } catch {
+      return false;
+    }
   }
 
   /**
