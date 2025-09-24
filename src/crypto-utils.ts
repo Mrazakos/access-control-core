@@ -77,14 +77,12 @@ export class CryptoUtils {
    * Strict base64 validation to prevent signature tampering
    */
   private static isValidBase64(str: string): boolean {
-    // Must only contain valid base64 characters: A-Z, a-z, 0-9, +, /, =
     const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
 
     if (!base64Regex.test(str)) {
       return false;
     }
 
-    // Check if the decoded buffer matches the original when re-encoded
     try {
       const decoded = Buffer.from(str, "base64");
       const reencoded = decoded.toString("base64");
